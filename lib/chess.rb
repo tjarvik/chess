@@ -1,46 +1,63 @@
 class Board
     def initialize
-        @pieces = {}
-        @locations = []
         make_pieces("W")
         make_pieces("B")
     end
     
     def make_pieces(color)
-        row = color == "W" ? 0 : 7
-        @pieces["#{color}K".to_sym] = King.new
-        @locations[4][row] = @pieces["#{color}K".to_sym]
-        @pieces["#{color}Q".to_sym] = Queen.new
-        @locations[3][row] = @pieces["#{color}Q".to_sym]
-        @pieces["#{color}R1".to_sym] = Rook.new
-        @locations[0][row] = @pieces["#{color}R1".to_sym]
-        @pieces["#{color}R2".to_sym] = Rook.new
-        @locations[7][row] = @pieces["#{color}R2".to_sym]
-        @pieces["#{color}B1".to_sym] = Bishop.new
-        @locations[2][row] = @pieces["#{color}B1".to_sym]
-        @pieces["#{color}B2".to_sym] = Bishop.new
-        @locations[5][row] = @pieces["#{color}B2".to_sym]
-        @pieces["#{color}N1".to_sym] = Knight.new
-        @locations[1][row] = @pieces["#{color}N1".to_sym]
-        @pieces["#{color}N2".to_sym] = Knight.new
-        @locations[6][row] = @pieces["#{color}N2".to_sym]
-        row = color == "W" ? 1 : 6
-        8.times do |i|
-            @pieces["#{color}P#{i+1}".to_sym] = Pawn.new
-            @locations[i][row] = @pieces["#{color}P#{i+1}".to_sym]
+        row = color == "W" ? "1" : "8"
+        King.new("#{color}K", color, "e#{row}")
+        Queen.new("#{color}Q", color, "d#{row}")
+        Rook.new("#{color}R1", color, "a#{row}")
+        Rook.new("#{color}R2", color, "h#{row}")
+        Bishop.new("#{color}B1", color, "c#{row}")
+        Bishop.new("#{color}B2", color, "f#{row}")
+        Knight.new("#{color}N1", color, "b#{row}")
+        Knight.new("#{color}N2", color, "g#{row}")
+        row = color == "W" ? "2" : "7"
+        "abcdefgh".split("").each do |letter|
+            Pawn.new("#{color}P#{letter.ord - 96}", color, "#{letter}#{row}")
         end
     end
-
 
     def display
+        locations = locate_pieces
+        display_string = "    _______________________________\n"
         8.times do |row|
-            #number header left
+            display_string += "#{8 - row}  |"
             8.times do |column|
-
+                piece = locations[row][column]
+                piece_character = piece == " " ? " " : piece.unicode.encode('utf-8')
+                display_string += " #{piece_character} |"
             end
+            display_string += "\n   |___|___|___|___|___|___|___|___|\n"
         end
+        display_string += "     a   b   c   d   e   f   g   h"
+        puts display_string
         #letter footer
     end
+
+    def locate_pieces
+        locations = empty_board
+        ObjectSpace.each_object(Piece) do |piece|
+            column, row = piece.location.split("")
+            locations[8 - row.to_i][column.ord - 97] = piece
+        end
+        locations
+    end
+
+    def empty_board
+        locations = []
+        8.times do
+            row = []
+            8.times do
+                row << " "
+            end
+            locations << row
+        end
+        locations
+    end
+
 end
 
 class Piece
@@ -49,27 +66,17 @@ class Piece
     attr_accessor :location
 
     def initialize(id, color, location)
-
+        @id = id
+        @color = color
+        @location = location
     end
 
 end
 
-class Pawn < Piece
-end
-
-class Knight < Piece
-end
-
-class Bishop < Piece
-end
-
-class Rook < Piece
-end
-
-class Queen < Piece
-end
-
 class King < Piece
+    def unicode 
+        self.color == "W" ? "\u2654" : "\u265A"
+    end
 
     def in_check?
 
@@ -80,6 +87,35 @@ class King < Piece
     end
 end
 
+class Queen < Piece
+    def unicode 
+        self.color == "W" ? "\u2655" : "\u265B"
+    end
+end
+
+class Rook < Piece
+    def unicode 
+        self.color == "W" ? "\u2656" : "\u265C" 
+    end
+end
+
+class Bishop < Piece
+    def unicode 
+        self.color == "W" ? "\u2657" : "\u265D"
+    end
+end
+
+class Knight < Piece
+    def unicode 
+        self.color == "W" ? "\u2658" : "\u265E"
+    end
+end
+
+class Pawn < Piece
+    def unicode 
+        self.color == "W" ? "\u2659" : "\u265F"
+    end
+end
 
 class Player
     attr_accessor :name
@@ -90,13 +126,11 @@ class Player
 
 end
 
-
-
 class Game
     def initialize
         @@checkmate = false
-        @white = Player.new(white)
-        @black = Player.new(black)
+        @white = Player.new("white")
+        @black = Player.new("black")
         @board = Board.new
         @current_player = @white
     end
@@ -111,6 +145,7 @@ class Game
         #update piece locations
         #checkmate?
         toggle_player
+        exit##one turn
     end
 
     def prompt_move
@@ -128,3 +163,6 @@ class Game
 
     end
 end
+
+game = Game.new
+game.play
