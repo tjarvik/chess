@@ -1,22 +1,23 @@
 class Board
     attr_accessor :squares
-    
+
     def initialize
+        @squares = {}
         "abcdefgh".split("").each do |letter|
             8.times do |number|
-                Square.new("#{letter}#{number + 1}")
+                @squares["#{letter}#{number + 1}"] = nil
             end
         end
     end
 
     def display
-        locations = locate_pieces
         display_string = "    _______________________________\n"
-        8.times do |row|
-            display_string += "#{8 - row}  |"
-            8.times do |column|
-                piece = locations[row][column]
-                piece_character = piece == " " ? " " : piece.unicode.encode('utf-8')
+        8.times do |raw_row|
+            row = 8 - raw_row
+            display_string += "#{row}  |"
+            "abcdefgh".split("").each do |column|
+                piece = @squares["#{column}#{row}"]
+                piece_character = piece == nil ? " " : piece.unicode.encode('utf-8')
                 display_string += " #{piece_character} |"
             end
             display_string += "\n   |___|___|___|___|___|___|___|___|\n"
@@ -24,52 +25,16 @@ class Board
         display_string += "     a   b   c   d   e   f   g   h"
         puts display_string
     end
-
-    def locate_pieces
-        locations = empty_board
-        ObjectSpace.each_object(Piece) do |piece|
-            column, row = piece.location.split("")
-            
-            locations[8 - row.to_i][column.ord - 97] = piece
-        end
-        locations
-    end
-
-    def empty_board
-        locations = []
-        8.times do
-            row = []
-            8.times do
-                row << " "
-            end
-            locations << row
-        end
-        locations
-    end
-
-end
-
-class Square
-    attr_accessor :name
-    attr_accessor :occupied_by
-
-    def initialize(name)
-        @name = name
-    end
-
 end
 
 class Piece
     attr_accessor :id
     attr_accessor :color
-    attr_accessor :location
 
-    def initialize(id, color, location)
+    def initialize(id, color)
         @id = id
         @color = color
-        @location = location
     end
-
 end
 
 class King < Piece
@@ -142,17 +107,17 @@ class Game
 
     def make_pieces(color)
         row = color == "W" ? "1" : "8"
-        King.new("#{color}K", color, "e#{row}")
-        Queen.new("#{color}Q", color, "d#{row}")
-        Rook.new("#{color}R1", color, "a#{row}")
-        Rook.new("#{color}R2", color, "h#{row}")
-        Bishop.new("#{color}B1", color, "c#{row}")
-        Bishop.new("#{color}B2", color, "f#{row}")
-        Knight.new("#{color}N1", color, "b#{row}")
-        Knight.new("#{color}N2", color, "g#{row}")
+        @board.squares["e#{row}"] = King.new("#{color}K", color)
+        @board.squares["d#{row}"] = Queen.new("#{color}Q", color)
+        @board.squares["a#{row}"] = Rook.new("#{color}R1", color)
+        @board.squares["h#{row}"] = Rook.new("#{color}R2", color)
+        @board.squares["c#{row}"] = Bishop.new("#{color}B1", color)
+        @board.squares["f#{row}"] = Bishop.new("#{color}B2", color)
+        @board.squares["b#{row}"] = Knight.new("#{color}N1", color)
+        @board.squares["g#{row}"] = Knight.new("#{color}N2", color)
         row = color == "W" ? "2" : "7"
         "abcdefgh".split("").each do |letter|
-            Pawn.new("#{color}P#{letter.ord - 96}", color, "#{letter}#{row}")
+            @board.squares["#{letter}#{row}"] = Pawn.new("#{color}P#{letter.ord - 96}", color)
         end
     end
 
@@ -166,6 +131,7 @@ class Game
         move = prompt_move
         make_move(move)
         toggle_player
+        puts "turn over"
         exit### plays one turn only
     end
 
@@ -191,9 +157,8 @@ class Game
 
     def legal_move(move)
         #is there a piece on initial square?
-        ObjectSpace.each_object(Piece) do |piece|
+        #ObjectSpace.each_object(Piece) do |piece|
 
-        end
         #is it your piece?
         #can it go to the final square?
         #is something in the way?
@@ -204,7 +169,7 @@ class Game
         true
     end
 
-    def make_move
+    def make_move(move)
         #find the piece on that square
         #assign it new location
         #if piece captured, destroy it
@@ -215,7 +180,9 @@ class Game
     end
     
     def save 
-
+        #save file
+        puts "Game saved."
+        exit
     end
 end
 
