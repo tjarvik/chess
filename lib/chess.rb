@@ -1,22 +1,11 @@
 class Board
-    def initialize
-        make_pieces("W")
-        make_pieces("B")
-    end
+    attr_accessor :squares
     
-    def make_pieces(color)
-        row = color == "W" ? "1" : "8"
-        King.new("#{color}K", color, "e#{row}")
-        Queen.new("#{color}Q", color, "d#{row}")
-        Rook.new("#{color}R1", color, "a#{row}")
-        Rook.new("#{color}R2", color, "h#{row}")
-        Bishop.new("#{color}B1", color, "c#{row}")
-        Bishop.new("#{color}B2", color, "f#{row}")
-        Knight.new("#{color}N1", color, "b#{row}")
-        Knight.new("#{color}N2", color, "g#{row}")
-        row = color == "W" ? "2" : "7"
+    def initialize
         "abcdefgh".split("").each do |letter|
-            Pawn.new("#{color}P#{letter.ord - 96}", color, "#{letter}#{row}")
+            8.times do |number|
+                Square.new("#{letter}#{number + 1}")
+            end
         end
     end
 
@@ -34,13 +23,13 @@ class Board
         end
         display_string += "     a   b   c   d   e   f   g   h"
         puts display_string
-        #letter footer
     end
 
     def locate_pieces
         locations = empty_board
         ObjectSpace.each_object(Piece) do |piece|
             column, row = piece.location.split("")
+            
             locations[8 - row.to_i][column.ord - 97] = piece
         end
         locations
@@ -56,6 +45,16 @@ class Board
             locations << row
         end
         locations
+    end
+
+end
+
+class Square
+    attr_accessor :name
+    attr_accessor :occupied_by
+
+    def initialize(name)
+        @name = name
     end
 
 end
@@ -124,15 +123,37 @@ class Player
         @name = name
     end
 
+    def in_check?
+        king_id = "#{@name[0]}K"
+        false
+    end
 end
 
 class Game
     def initialize
         @@checkmate = false
-        @white = Player.new("white")
-        @black = Player.new("black")
+        @white = Player.new("White")
+        @black = Player.new("Black")
         @board = Board.new
         @current_player = @white
+        make_pieces("W")
+        make_pieces("B")
+    end
+
+    def make_pieces(color)
+        row = color == "W" ? "1" : "8"
+        King.new("#{color}K", color, "e#{row}")
+        Queen.new("#{color}Q", color, "d#{row}")
+        Rook.new("#{color}R1", color, "a#{row}")
+        Rook.new("#{color}R2", color, "h#{row}")
+        Bishop.new("#{color}B1", color, "c#{row}")
+        Bishop.new("#{color}B2", color, "f#{row}")
+        Knight.new("#{color}N1", color, "b#{row}")
+        Knight.new("#{color}N2", color, "g#{row}")
+        row = color == "W" ? "2" : "7"
+        "abcdefgh".split("").each do |letter|
+            Pawn.new("#{color}P#{letter.ord - 96}", color, "#{letter}#{row}")
+        end
     end
 
     def play
@@ -141,18 +162,52 @@ class Game
 
     def take_turn
         @board.display
-        prompt_move
-        #update piece locations
         #checkmate?
+        move = prompt_move
+        make_move(move)
         toggle_player
-        exit##one turn
+        exit### plays one turn only
     end
 
     def prompt_move
-        #display whose turn
-        #warn check
-        #prompt for input / SAVE
-        #verify legal move; re-prompt
+        puts "Check!" if @current_player.in_check?
+        puts "#{@current_player.name}'s move. Enter your move or type SAVE to save game:"
+        input = gets.chomp
+        until check_format(input)
+            puts "Invalid move. Enter move in coordinate format, e.g., e2-e4"
+            input = gets.chomp
+        end
+        until legal_move(input)
+            puts "#{input} is not a legal move. Enter move:"
+            input = gets.chomp
+        end
+        input.downcase
+    end
+
+    def check_format(input)
+        save if input =~ /SAVE/i
+        input =~ /^[A-H][1-8]-[A-H][1-8]$/i
+    end
+
+    def legal_move(move)
+        #is there a piece on initial square?
+        ObjectSpace.each_object(Piece) do |piece|
+
+        end
+        #is it your piece?
+        #can it go to the final square?
+        #is something in the way?
+        #if piece on final square, is it opponent's?
+        #if pawn, special capture rules
+        #if king, moving into check
+        #special castle rules
+        true
+    end
+
+    def make_move
+        #find the piece on that square
+        #assign it new location
+        #if piece captured, destroy it
     end
 
     def toggle_player
