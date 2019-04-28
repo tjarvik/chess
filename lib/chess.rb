@@ -35,11 +35,23 @@ class Piece
         @id = id
         @color = color
     end
+
+    def rc_diff(from, to)
+        row_diff = to[1].to_i - from[1].to_i
+        col_diff = to[0].ord - from[0].ord
+        return row_diff, col_diff
+    end
 end
 
 class King < Piece
     def unicode 
         self.color == "W" ? "\u2654" : "\u265A"
+    end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        row_diff.abs <= 1 && col_diff.abs <= 1
+        ##or castles
     end
 
     def in_check?
@@ -55,17 +67,34 @@ class Queen < Piece
     def unicode 
         self.color == "W" ? "\u2655" : "\u265B"
     end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        row_diff == 0 || col_diff == 0 || row_diff.abs == col_diff.abs
+    end
+
 end
 
 class Rook < Piece
     def unicode 
         self.color == "W" ? "\u2656" : "\u265C" 
     end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        row_diff == 0 || col_diff == 0
+    end
+
 end
 
 class Bishop < Piece
     def unicode 
         self.color == "W" ? "\u2657" : "\u265D"
+    end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        row_diff.abs == col_diff.abs
     end
 end
 
@@ -73,19 +102,31 @@ class Knight < Piece
     def unicode 
         self.color == "W" ? "\u2658" : "\u265E"
     end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        row_diff.abs == 1 && col_diff.abs == 2 || row_diff.abs == 2 && col_diff.abs == 1
+    end
 end
 
 class Pawn < Piece
     def unicode 
         self.color == "W" ? "\u2659" : "\u265F"
     end
+
+    def legal?(from, to, squares)
+        row_diff, col_diff = rc_diff(from, to)
+        true #####
+    end
 end
 
 class Player
     attr_accessor :name
+    attr_accessor :color
 
-    def initialize(name)
+    def initialize(name, color)
         @name = name
+        @color = color
     end
 
     def in_check?
@@ -97,8 +138,8 @@ end
 class Game
     def initialize
         @@checkmate = false
-        @white = Player.new("White")
-        @black = Player.new("Black")
+        @white = Player.new("White", "W")
+        @black = Player.new("Black", "B")
         @board = Board.new
         @current_player = @white
         make_pieces("W")
@@ -128,61 +169,57 @@ class Game
     def take_turn
         @board.display
         #checkmate?
-        move = prompt_move
-        make_move(move)
-        toggle_player
-        puts "turn over"
-        exit### plays one turn only
+        prompt_move
+        @current_player = @current_player == @white ? @black : @white
     end
 
     def prompt_move
         puts "Check!" if @current_player.in_check?
         puts "#{@current_player.name}'s move. Enter your move or type SAVE to save game:"
-        input = gets.chomp
+        input = gets.chomp.downcase
         until check_format(input)
             puts "Invalid move. Enter move in coordinate format, e.g., e2-e4"
-            input = gets.chomp
+            input = gets.chomp.downcase
         end
         until legal_move(input)
             puts "#{input} is not a legal move. Enter move:"
-            input = gets.chomp
+            input = gets.chomp.downcase
         end
-        input.downcase
+        input
     end
 
     def check_format(input)
-        save if input =~ /SAVE/i
-        input =~ /^[A-H][1-8]-[A-H][1-8]$/i
+        save if input =~ /save/
+        input =~ /^[a-h][1-8]-[a-h][1-8]$/
     end
 
     def legal_move(move)
-        #is there a piece on initial square?
-        #ObjectSpace.each_object(Piece) do |piece|
-
-        #is it your piece?
-        #can it go to the final square?
+        from = move[0..1]
+        to = move[3..4]
+        piece = @board.squares[from]
+        return false if piece.nil?
+        return false unless piece.color == @current_player.color
+        return false if from == to
+        return false if piece.legal?(from, to, @board.squares) == false
         #is something in the way?
         #if piece on final square, is it opponent's?
         #if pawn, special capture rules
-        #if king, moving into check
+        #not moving self into check
         #special castle rules
+        @board.squares[from] = nil
+        @board.squares[to] = piece
+        #if piece captured, also destroy it
         true
-    end
-
-    def make_move(move)
-        #find the piece on that square
-        #assign it new location
-        #if piece captured, destroy it
-    end
-
-    def toggle_player
-        @current_player = @current_player == @white ? @black : @white
     end
     
     def save 
         #save file
         puts "Game saved."
         exit
+    end
+
+    def load
+        #load file
     end
 end
 
