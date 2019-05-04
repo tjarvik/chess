@@ -1,4 +1,5 @@
 require './lib/state.rb'
+require './lib/game.rb'
 
 describe State do
 
@@ -157,7 +158,7 @@ describe State do
         board = State.new(squares=[
                 [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
                 [ nil, "BN",  nil,  nil,  nil, "BP", "BK",  nil],
-                ["WP", "WN", "BP",  nil,  nil,  nil,  nil,  nil],
+                ["WN", "WN", "BP",  nil,  nil,  nil,  nil,  nil],
                 ["WK",  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                 ["BB",  nil,  nil,  nil,  nil,  nil, "BR",  nil],
                 [ nil, "WP",  nil,  nil,  nil,  nil,  nil, "WR"],
@@ -182,6 +183,38 @@ describe State do
         it "returns all legal moves for player" do
             board = sample_board2
             expect(board.get_all_legals("B")).to be_instance_of Array
+            #puts the array for this test to actually be meaningful!
+        end
+    end
+
+    describe "#make_move" do
+        it "shows piece at new location" do
+            board = sample_board2
+            board.make_move([[5,1],[4,0]])
+            expect(board.squares[4][0]).to eql("WP")
+        end
+
+        it "no longer shows piece at old location" do
+            board = sample_board2
+            board.make_move([[5,1],[4,0]])
+            expect(board.squares[5][1]).to eql(nil)
+        end
+    end
+
+    describe "#checkmate?" do
+        it "identifies checkmate" do
+            board = sample_board2
+            expect(board.checkmate?("W")).to be true
+        end
+
+        it "does not identify checkmate when capture would escape" do
+            board = sample_board
+            expect(board.checkmate?("W")).to be false
+        end
+
+        it "does not identify checkmate when only in check" do
+            board = sample_board
+            expect(board.checkmate?("B")).to be false
         end
     end
 end

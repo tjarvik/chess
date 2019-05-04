@@ -1,5 +1,6 @@
 require './lib/state.rb'
 class Game
+
     def initialize
         @checkmate = false
         @board = State.new
@@ -50,28 +51,11 @@ class Game
         to = move[3..4]
         piece = @board.squares[from].piece
         captured = @board.squares[to].piece
+        return true###
         return false if piece.nil?
         return false if from == to
         return false if piece.color != @current_player.color
-        return false if captured && piece.color == captured.color
         return false if piece.legal?(from, to) == false
-        return false if piece.path_clear?(from, to) == false
-        @board.squares[from].piece = nil
-        @board.squares[to].piece = piece
-        ###promote pawns
-        ###if castled, move rook too
-        if @current_player.in_check?
-            ###move it all back -- including castling, ep
-            @board.squares[from].piece = piece
-            @board.squares[to].piece = captured
-            return false
-        end
-        ObjectSpace.each_object(Piece) do |pc|
-            pc.just_moved = false
-        end
-        piece.just_moved = true
-        piece.ever_moved = true
-        true
     end
 
     def save_game
@@ -89,8 +73,8 @@ end
 
 #game = Game.new
 #game.play
-board = State.new
-board.display
+#board = State.new
+#board.display
 
 
 

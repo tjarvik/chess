@@ -1,4 +1,5 @@
 class State
+    require 'yaml'
     attr_accessor :squares
 
     def initialize(squares=[  ["BR", "BN", "BB", "BQ", "BK", "BB", "BN", "BR"],
@@ -36,12 +37,6 @@ class State
         row_diff = to_sq[0].to_i - from_sq[0].to_i
         col_diff = to_sq[1].to_i - from_sq[1].to_i
         return row_diff, col_diff
-    end
-
-    def check?(for_color)
-        k_square = locate_king(for_color)
-        opponent = for_color == "W" ? "B" : "W"
-        square_threatened?(k_square, opponent)
     end
 
     def square_threatened?(square, by_color)
@@ -141,8 +136,28 @@ class State
         legals
     end
 
-    def checkmate?(for_color)
-        false
+    def check?(for_color)
+        k_square = locate_king(for_color)
+        opponent = for_color == "W" ? "B" : "W"
+        square_threatened?(k_square, opponent)
+    end
+
+    def checkmate?(for_color) 
+        legals = get_all_legals(for_color)
+        legals.each do |move|
+            hypothetical = State.new(YAML::load(YAML::dump(@squares)))
+            hypothetical.make_move(move)
+            return false if !hypothetical.check?(for_color)
+        end
+        true
+    end
+
+    def make_move(move)
+        from_sq = move[0]
+        to_sq = move[1]
+        piece = @squares[from_sq[0]][from_sq[1]]
+        @squares[to_sq[0]][to_sq[1]] = piece
+        @squares[from_sq[0]][from_sq[1]] = nil
     end
 
     def castling_allowed?(for_color)
