@@ -1,9 +1,9 @@
 require './lib/state.rb'
 
 describe State do
-    describe "#locate_king" do
-        it "should return king's square" do
-            board = State.new(squares=[
+
+    def starting_board
+        board = State.new(squares=[
                 ["BR", "BN", "BB", "BQ", "BK", "BB", "BN", "BR"],
                 ["BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP"],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
@@ -11,12 +11,163 @@ describe State do
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                 ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
-                ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]])
-            expect(board.locate_king("W")).to eql([7,4])
-        end
-
+                ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]]) 
+        return board
     end
 
+    def sample_board
+        board = State.new(squares=[
+                [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
+                [ nil, "BN",  nil,  nil,  nil, "BP", "BK",  nil],
+                ["WP", "WN", "BP",  nil,  nil, "WP",  nil,  nil],
+                ["WK",  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["BB",  nil,  nil,  nil,  nil,  nil, "BR",  nil],
+                [ nil, "WP",  nil,  nil,  nil,  nil,  nil, "WR"],
+                [ nil,  nil, "WP",  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil, "WB"]]) 
+        return board
+    end
 
+    describe "#locate_king" do
+        it "returns the king's square" do
+            board = sample_board
+            expect(board.locate_king("W")).to eql([3,0])
+        end
+    end
+
+    describe "#can_go?" do
+        it "allows pawn to move forward one" do
+            board = sample_board
+            expect(board.can_go?([6,2], [5,2], "WP")).to be true
+        end
+
+        it "does not allow pawn to move backward" do
+            board = sample_board
+            expect(board.can_go?([6,2], [7,2], "WP")).to be false
+        end
+
+        it "allows pawn to move forward two from starting square" do
+            board = sample_board
+            expect(board.can_go?([6,2], [4,2], "WP")).to be true
+        end
+
+        it "does not allow pawn to move forward to from elsewhere" do
+            board = sample_board
+            expect(board.can_go?([5,1], [3,1], "WP")).to be false
+        end
+
+        it "does not allow pawn to move sideways" do
+            board = sample_board
+            expect(board.can_go?([6,2], [5,1], "WP")).to be false
+        end
+
+        it "allows knight to move correctly" do
+            board = sample_board
+            expect(board.can_go?([1,1], [3,0], "BN")).to be true
+        end
+
+        it "does not allow knight to move incorrectly" do
+            board = sample_board
+            expect(board.can_go?([1,1], [3,1], "BN")).to be false
+        end
+        
+        it "allows bishop to move correctly" do
+            board = sample_board
+            expect(board.can_go?([7,7], [3,3], "WB")).to be true
+        end
+        
+        it "does not allow bishop to move incorrectly" do
+            board = sample_board
+            expect(board.can_go?([7,7], [3,1], "WB")).to be false
+        end
+
+        it "does not allow bishop to jump" do
+            board = sample_board
+            expect(board.can_go?([7,7], [1,1], "WB")).to be false
+        end
+
+        it "allows rook to move correctly" do
+            board = sample_board
+            expect(board.can_go?([5,7], [5,4], "WR")).to be true
+        end
+        
+        it "does not allow rook to move incorrectly" do
+            board = sample_board
+            expect(board.can_go?([5,7], [6,6], "WR")).to be false
+        end
+
+        it "does not allow rook to jump" do
+            board = sample_board
+            expect(board.can_go?([5,7], [5,0], "WR")).to be false
+        end
+
+        it "allows queen to move straight" do
+            board = sample_board
+            expect(board.can_go?([0,3], [0,7], "BQ")).to be true
+        end
+
+        it "allows queen to move diagonally" do
+            board = sample_board
+            expect(board.can_go?([0,3], [2,5], "BQ")).to be true
+        end
+        
+        it "does not allow queen to move incorrectly" do
+            board = sample_board
+            expect(board.can_go?([0,3], [2,4], "BQ")).to be false
+        end
+
+        it "does not allow queen to jump" do
+            board = sample_board
+            expect(board.can_go?([0,3], [3,6], "BQ")).to be false
+        end
+
+        it "allows king to move one space" do
+            board = sample_board
+            expect(board.can_go?([1,6], [2,6], "BK")).to be true
+        end
+        
+        it "does not allow king to move two spaces" do
+            board = sample_board
+            expect(board.can_go?([1,6], [3,6], "BK")).to be false
+        end
+    end
+
+    describe "#can_capture?" do
+        it "allows pawn to capture diagonally" do
+            board = sample_board
+            expect(board.can_capture?([2,5], [1,6], "WP")).to be true
+        end
+
+        it "does not allow pawn to capture straight" do
+            board = sample_board
+            expect(board.can_capture?([2,5], [1,5], "WP")).to be false
+        end
+    end
+
+    def sample_board2
+        board = State.new(squares=[
+                [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
+                [ nil, "BN",  nil,  nil,  nil, "BP", "BK",  nil],
+                ["WP", "WN", "BP",  nil,  nil,  nil,  nil,  nil],
+                ["WK",  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["BB",  nil,  nil,  nil,  nil,  nil, "BR",  nil],
+                [ nil, "WP",  nil,  nil,  nil,  nil,  nil, "WR"],
+                [ nil,  nil, "WP",  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil, "WB"]]) 
+        return board
+    end
+
+    describe "#check?" do
+        it "identifies check" do
+            board = sample_board
+            expect(board.check?("B")).to be true
+        end
+
+        it "identifies no check" do
+            board = sample_board2
+            expect(board.check?("B")).to be false
+        end
+    
+    end
 
 end

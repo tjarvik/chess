@@ -32,10 +32,6 @@ class State
         pieces.map{|piece| unicodes[piece].encode('utf-8')}
     end
 
-    def opponent(color)
-        color == "W" ? "B" : "W"
-    end
-
     def rc_diff(from_sq, to_sq)
         row_diff = to_sq[0].to_i - from_sq[0].to_i
         col_diff = to_sq[1].to_i - from_sq[1].to_i
@@ -44,9 +40,9 @@ class State
 
     def check?(for_color)
         k_square = locate_king(for_color)
-        square_threatened(for_color.opponent)
+        opponent = for_color == "W" ? "B" : "W"
+        square_threatened?(k_square, opponent)
     end
-
 
     def square_threatened?(square, by_color)
         8.times do |row|
@@ -67,15 +63,40 @@ class State
     end
 
     def can_capture?(from_sq, to_sq, piece)
-
+        if piece[1] == "P"
+            row_diff, col_diff = rc_diff(from_sq, to_sq)
+            direction = piece[0] == "W" ? -1 : 1
+            row_diff == direction && col_diff.abs == 1
+        else
+            can_go?(from_sq, to_sq, piece)
+        end
     end
 
     def can_go?(from_sq, to_sq, piece)
-
+        row_diff, col_diff = rc_diff(from_sq, to_sq)
+        case piece[1]
+        when "K"
+            row_diff.abs <= 1 && col_diff.abs <= 1
+            #or castling
+        when "Q"
+            (row_diff == 0 || col_diff == 0 || row_diff.abs == col_diff.abs) &&
+                path_clear?(from_sq, to_sq)
+        when "R"
+            (row_diff == 0 || col_diff == 0) && path_clear?(from_sq, to_sq)
+        when "B"
+            row_diff.abs == col_diff.abs && path_clear?(from_sq, to_sq)
+        when "N"
+            row_diff.abs == 1 && col_diff.abs == 2 || row_diff.abs == 2 && col_diff.abs == 1
+        when "P"
+            direction = piece[0] == "W" ? -1 : 1
+            start_row = piece[0] == "W" ? 6 : 1
+            col_diff == 0 && (row_diff == direction || 
+                row_diff == direction * 2 && from_sq[0] == start_row && 
+                path_clear?(from_sq, to_sq))
+        end
     end
 
-    def path_clear?(from_sq, to_sq, piece)
-        return true if piece[1] == "N"
+    def path_clear?(from_sq, to_sq)
         row_diff, col_diff = rc_diff(from_sq, to_sq)
         row_direction = row_diff == 0 ? 0 : row_diff / row_diff.abs
         col_direction = col_diff == 0 ? 0 : col_diff / col_diff.abs
@@ -84,7 +105,7 @@ class State
             next if n == 0
             this_row = from_sq[0] + n * row_direction
             this_col = from_sq[1] + n * col_direction
-            return false if @squares[this_col][this_row]
+            return false if @squares[this_row][this_col]
         end
         true
     end
@@ -104,88 +125,5 @@ class State
 
     def castling_allowed?(for_color)
 
-    end
-end
-
-
-
-class King
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        return true if row_diff.abs <= 1 && col_diff.abs <= 1
-        #castling rules:
-        return false if self.ever_moved
-        if row_diff == 0 && col_diff.abs == 2
-            rook_col = row_diff == 2 ? "h" : "a"
-            rook_square = "#{rook_col}#{from[1]}"
-            rook = @board.squares[rook_square].piece
-            return false if rook.nil?
-            return false if rook.ever_moved
-            return false unless path_clear?(from, rook_square)
-            ###return false if current or intervening square threatened
-            return true
-        end
-        false
-    end
-end
-
-class Queen 
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        row_diff == 0 || col_diff == 0 || row_diff.abs == col_diff.abs
-    end
-
-end
-
-class Rook 
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        row_diff == 0 || col_diff == 0
-    end
-
-end
-
-class Bishop
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        row_diff.abs == col_diff.abs
-    end
-end
-
-class Knight 
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        row_diff.abs == 1 && col_diff.abs == 2 || row_diff.abs == 2 && col_diff.abs == 1
-    end
-end
-
-class Pawn
-    def legal?(from, to)
-        row_diff, col_diff = rc_diff(from, to)
-        direction = self.color == "W" ? 1 : -1
-        return false if col_diff.abs > 1
-        return false unless row_diff == direction || row_diff == direction * 2
-        row = from[1].to_i
-        col = from[0].ord - 96
-        if col_diff == 0 #move forward
-            return false if @board.squares["#{from[0]}#{row + direction}"].piece
-            if row_diff == 2
-                return false if self.ever_moved == true
-                self.just_moved = true
-            end
-        else #capture
-            return false if row_diff != direction
-            if @board.squares[to].piece.nil? 
-                en_passant = @board.squares["#{to[0]}#{from[1]}"].piece
-                return false if en_passant.nil?
-                return false unless en_passant.is_a?(Pawn)
-                return false if en_passant.color == self.color
-                return false unless en_passant.just_moved == true
-                en_passant = nil ###destroy it now?
-            else
-                return false if @board.squares[to].piece.color == self.color
-            end 
-        end
-        true
     end
 end
