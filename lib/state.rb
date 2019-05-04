@@ -9,7 +9,7 @@ class State
                               [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                               ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
                               ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]])
-        #nothing = "
+        #nothing = " # because text editor is messing up quote coloration above
         @squares = squares
     end
 
@@ -50,30 +50,25 @@ class State
                 piece = @squares[row][col]
                 next if piece == nil
                 if piece[0] == by_color 
-                    return true if threatens?([row, col], square)
+                    return true if can_go?([row, col], square)
                 end
             end
         end
         false
     end
 
-    def threatens?(from_sq, to_sq)
-        piece = @squares[from_sq[0]][from_sq[1]]
-        can_capture?(from_sq, to_sq, piece)
-    end
-
-    def can_capture?(from_sq, to_sq, piece)
-        if piece[1] == "P"
-            row_diff, col_diff = rc_diff(from_sq, to_sq)
-            direction = piece[0] == "W" ? -1 : 1
-            row_diff == direction && col_diff.abs == 1
-        else
-            can_go?(from_sq, to_sq, piece)
-        end
-    end
-
-    def can_go?(from_sq, to_sq, piece)
+    def can_go?(from_sq, to_sq)
         row_diff, col_diff = rc_diff(from_sq, to_sq)
+        piece = @squares[from_sq[0]][from_sq[1]]
+        capture_piece = @squares[to_sq[0]][to_sq[1]]
+        if capture_piece
+            return false if capture_piece[0] == piece[0]
+            if piece[1] == "P"
+                row_diff, col_diff = rc_diff(from_sq, to_sq)
+                direction = piece[0] == "W" ? -1 : 1
+                return row_diff == direction && col_diff.abs == 1
+            end
+        end
         case piece[1]
         when "K"
             row_diff.abs <= 1 && col_diff.abs <= 1
@@ -119,6 +114,11 @@ class State
         end
     end
     
+    def all_legal(color)
+        legals = []
+
+    end
+
     def checkmate?(for_color)
         false
     end
