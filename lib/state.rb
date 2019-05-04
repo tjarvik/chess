@@ -158,6 +158,8 @@ class State
         piece = @squares[from_sq[0]][from_sq[1]]
         @squares[to_sq[0]][to_sq[1]] = piece
         @squares[from_sq[0]][from_sq[1]] = nil
+        #if castling, move rook too
+        #if en passant, remove captured pawn
     end
 
     def castling_allowed?(for_color)

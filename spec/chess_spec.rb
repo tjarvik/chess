@@ -218,3 +218,18 @@ describe State do
         end
     end
 end
+
+describe Game do
+    describe "#legal_move?" do
+        it "allows a legal move" do
+            game = Game.new
+            expect(game.legal_move?("e2-e4")).to be true
+        end
+
+        it "does not allow an illegal move" do
+            game = Game.new
+            expect(game.legal_move?("d1-d4")).to be false
+        end
+
+    end
+end
