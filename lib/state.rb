@@ -114,9 +114,31 @@ class State
         end
     end
     
-    def all_legal(color)
+    def get_all_legals(color)
         legals = []
+        8.times do |row|
+            8.times do |col|
+                piece = @squares[row][col]
+                next if piece.nil?
+                next unless piece[0] == color
+                piece_legals = get_piece_legals(row, col)
+                piece_legals.each {|move| legals << move}
+            end
+        end
+        legals
+    end
 
+    def get_piece_legals(from_row, from_col)
+        legals = []
+        piece = @squares[from_row][from_col]
+        8.times do |to_row|
+            8.times do |to_col|
+                if can_go?([from_row, from_col], [to_row, to_col])
+                    legals << [[from_row, from_col], [to_row, to_col]]
+                end
+            end
+        end
+        legals
     end
 
     def checkmate?(for_color)

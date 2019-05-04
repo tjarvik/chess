@@ -176,7 +176,12 @@ describe State do
             board = sample_board2
             expect(board.check?("B")).to be false
         end
-    
     end
 
+    describe "#get_all_legals" do
+        it "returns all legal moves for player" do
+            board = sample_board2
+            expect(board.get_all_legals("B")).to be_instance_of Array
+        end
+    end
 end
