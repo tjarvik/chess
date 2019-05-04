@@ -1,41 +1,55 @@
-class Board
+class State
     attr_accessor :squares
 
-    def initialize
-        @squares = {}
-        "abcdefgh".split("").each do |letter|
-            8.times do |number|
-                location = "#{letter}#{number + 1}"
-                @squares[location] = Square.new(location)
-            end
-        end
+    def initialize(squares=[["BR", "BN", "BB", "BQ", "BK", "BB", "BN", "BR"],
+                              ["BP", "BP", "BP", "BP", "BP", "BP", "BP", "BP"],
+                              [nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                              [nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                              [nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                              [nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                              ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
+                              ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]])
+        #nothing = "
+        @squares = squares
     end
 
     def display
-        display_string = "    _______________________________\n"
-        8.times do |raw_row|
-            row = 8 - raw_row
-            display_string += "#{row}  |"
-            "abcdefgh".split("").each do |column|
-                square = @squares["#{column}#{row}"]
-                piece = square.piece
-                piece_character = piece == nil ? " " : piece.unicode.encode('utf-8')
-                display_string += " #{piece_character} |"
-            end
-            display_string += "\n   |___|___|___|___|___|___|___|___|\n"
+        puts "    _______________________________"
+        8.times do |row|
+            chars = unicode(squares[row])
+            puts "#{8 - row}  | #{chars.join(" | ")} |"
+            puts "   |___|___|___|___|___|___|___|___|"
         end
-        display_string += "     a   b   c   d   e   f   g   h"
-        puts display_string
+        puts "     a   b   c   d   e   f   g   h"
+    end
+
+    def unicode(pieces)
+        unicodes = {"WK" => "\u2654", "WQ" => "\u2655", "WR" => "\u2656",
+                    "WB" => "\u2657", "WN" => "\u2658", "WP" => "\u2659",
+                    "BK" => "\u265A", "BQ" => "\u265B", "BR" => "\u265C",
+                    "BB" => "\u265D", "BN" => "\u265E", "BP" => "\u265F",
+                    nil => " "}
+        pieces.map{|piece| unicodes[piece].encode('utf-8')}
+    end
+
+    def check?(for_color)
+        false
+    end
+
+    def checkmate?(for_color)
+        false
+    end
+
+    def castling_allowed?(for_color)
+
     end
 end
 
 class Square
     attr_accessor :location
-    attr_accessor :piece
 
     def initialize(location)
         @location = location
-        @piece = nil
     end
 
     def threatened?(by_color)
@@ -58,12 +72,6 @@ class Piece
         @board = board
         @ever_moved = false
         @just_moved = false
-    end
-
-    def square
-        ObjectSpace.each_object(Square) do |square|
-            return square if square.piece == self
-        end
     end
 
     def rc_diff(from, to)
@@ -91,10 +99,6 @@ class Piece
 end
 
 class King < Piece
-    def unicode 
-        self.color == "W" ? "\u2654" : "\u265A"
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         return true if row_diff.abs <= 1 && col_diff.abs <= 1
@@ -115,10 +119,6 @@ class King < Piece
 end
 
 class Queen < Piece
-    def unicode 
-        self.color == "W" ? "\u2655" : "\u265B"
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         row_diff == 0 || col_diff == 0 || row_diff.abs == col_diff.abs
@@ -127,10 +127,6 @@ class Queen < Piece
 end
 
 class Rook < Piece
-    def unicode 
-        self.color == "W" ? "\u2656" : "\u265C" 
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         row_diff == 0 || col_diff == 0
@@ -139,10 +135,6 @@ class Rook < Piece
 end
 
 class Bishop < Piece
-    def unicode 
-        self.color == "W" ? "\u2657" : "\u265D"
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         row_diff.abs == col_diff.abs
@@ -150,10 +142,6 @@ class Bishop < Piece
 end
 
 class Knight < Piece
-    def unicode 
-        self.color == "W" ? "\u2658" : "\u265E"
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         row_diff.abs == 1 && col_diff.abs == 2 || row_diff.abs == 2 && col_diff.abs == 1
@@ -161,10 +149,6 @@ class Knight < Piece
 end
 
 class Pawn < Piece
-    def unicode 
-        self.color == "W" ? "\u2659" : "\u265F"
-    end
-
     def legal?(from, to)
         row_diff, col_diff = rc_diff(from, to)
         direction = self.color == "W" ? 1 : -1
@@ -195,67 +179,27 @@ class Pawn < Piece
     end
 end
 
-class Player
-    attr_accessor :name
-    attr_accessor :color
-    attr_accessor :king
-
-    def initialize(name, color, king)
-        @name = name
-        @color = color
-        @king = king
-    end
-
-    def in_check?
-        by_color = @color == "W" ? "B" : "W"
-        @king.square.threatened?(by_color)
-    end
-
-    def in_checkmate?
-        by_color = @color == "W" ? "B" : "W"
-        ####
-    end
-end
-
 class Game
     def initialize
         @checkmate = false
-        @board = Board.new
-        @white_king = King.new("W", @board)
-        @black_king = King.new("B", @board)
-        @white = Player.new("White", "W", @white_king)
-        @black = Player.new("Black", "B", @black_king)
-        @board.squares["e1"].piece = @white_king
-        @board.squares["e8"].piece = @black_king
-        make_pieces("W")
-        make_pieces("B")
-        @current_player = @white
-    end
-
-    def make_pieces(color)
-        row = color == "W" ? "1" : "8"
-        @board.squares["d#{row}"].piece = Queen.new(color, @board)
-        @board.squares["a#{row}"].piece = Rook.new(color, @board)
-        @board.squares["h#{row}"].piece = Rook.new(color, @board)
-        @board.squares["c#{row}"].piece = Bishop.new(color, @board)
-        @board.squares["f#{row}"].piece = Bishop.new(color, @board)
-        @board.squares["b#{row}"].piece = Knight.new(color, @board)
-        @board.squares["g#{row}"].piece = Knight.new(color, @board)
-        row = color == "W" ? "2" : "7"
-        "abcdefgh".split("").each do |letter|
-            @board.squares["#{letter}#{row}"].piece = Pawn.new(color, @board)
-        end
+        @board = State.new
+        @current_player = "W"
     end
 
     def play
+        @board.display
         take_turn until @checkmate
     end
 
     def take_turn
+        move = prompt_move
+        make_move(move)
         @board.display
-        #checkmate?
-        prompt_move
-        @current_player = @current_player == @white ? @black : @white
+        toggle_player
+    end
+
+    def toggle_player
+        @current_player = @current_player == "W" ? "B" : "W"
     end
 
     def prompt_move
@@ -266,15 +210,18 @@ class Game
             puts "Invalid move. Enter move in coordinate format, e.g., e2-e4"
             input = gets.chomp.downcase
         end
+        #convert format
         until legal_move(input)
             puts "#{input} is not a legal move. Enter move:"
             input = gets.chomp.downcase
         end
+        #convert format
         input
     end
 
     def check_format(input)
-        save if input =~ /save/
+        save_game if input =~ /save/
+        load_game if input =~ /load/
         input =~ /^[a-h][1-8]\-[a-h][1-8]$/
     end
 
@@ -307,16 +254,20 @@ class Game
         true
     end
 
-    def save 
+    def save_game
         #save file
         puts "Game saved."
         exit
     end
 
-    def load
+    def load_game
         #load file
+        #set board to saved state
+        self.play
     end
 end
 
-game = Game.new
-game.play
+#game = Game.new
+#game.play
+board = State.new
+board.display
