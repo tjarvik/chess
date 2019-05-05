@@ -198,15 +198,19 @@ class State
         end
         @have_moved[from_sq] = true
 
-        if piece[1] == "P" && col_diff.abs == 1 && @squares[to_sq[0]][to_sq[1]].nil? #en passant
-            @squares[from_sq[0]][to_sq[1]] = nil
-        end
         @en_passant_square = nil
-        if piece[1] == "P" && row_diff.abs == 2
-            direction = piece[0] == "W" ? -1 : 1
-            @en_passant_square = [from_sq[0] + direction, from_sq[1]]
+        if piece[1] == "P" 
+            if col_diff.abs == 1 && @squares[to_sq[0]][to_sq[1]].nil? #en passant
+                @squares[from_sq[0]][to_sq[1]] = nil
+            end
+            if row_diff.abs == 2
+                direction = piece[0] == "W" ? -1 : 1
+                @en_passant_square = [from_sq[0] + direction, from_sq[1]]
+            end
+            final_row = piece[0] == "W" ? 0 : 7
+            piece[1] = "Q" if to_sq[0] == final_row
         end
-
+        
         @squares[to_sq[0]][to_sq[1]] = piece
         @squares[from_sq[0]][from_sq[1]] = nil
     end

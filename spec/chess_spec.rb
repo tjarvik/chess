@@ -208,7 +208,7 @@ describe State do
     def sample_board2
         board = State.new(squares=[
                 [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
-                [ nil, "BN",  nil,  nil,  nil, "BP", "BK",  nil],
+                ["WP", "BN",  nil,  nil,  nil, "BP", "BK",  nil],
                 ["WN", "WN", "BP",  nil,  nil,  nil,  nil,  nil],
                 ["WK",  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                 ["BB",  nil,  nil,  nil,  nil,  nil, "BR",  nil],
@@ -262,6 +262,12 @@ describe State do
             board = sample_board2
             board.make_move([[5,1],[4,0]])
             expect(board.squares[5][1]).to eql(nil)
+        end
+
+        it "promotes a pawn" do
+            board = sample_board2
+            board.make_move([[1,0],[0,0]])
+            expect(board.squares[0][0]).to eql("WQ")
         end
     end
 
