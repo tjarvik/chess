@@ -1,0 +1,81 @@
+--- !ruby/object:Game
+game_over: false
+board: !ruby/object:State
+  squares:
+  - - BR
+    - BN
+    - BB
+    - BQ
+    - BK
+    - BB
+    - BN
+    - BR
+  - - BP
+    - BP
+    - BP
+    - BP
+    - 
+    - BP
+    - BP
+    - BP
+  - - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+  - - 
+    - 
+    - 
+    - 
+    - BP
+    - 
+    - 
+    - 
+  - - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+    - 
+  - - 
+    - 
+    - 
+    - 
+    - 
+    - WN
+    - 
+    - 
+  - - WP
+    - WP
+    - WP
+    - WP
+    - WP
+    - WP
+    - WP
+    - WP
+  - - WR
+    - WN
+    - WB
+    - WQ
+    - WK
+    - WB
+    - 
+    - WR
+  en_passant_square:
+  - 2
+  - 4
+  have_moved:
+    ? - 7
+      - 6
+    : true
+    ? - 1
+      - 4
+    : true
+current_player: W
+current_player_name: White
+computer: true
