@@ -43,7 +43,7 @@ class Game
     end
 
     def prompt_move
-        puts "#{@current_player_name}'s move. Enter your move or type SAVE/LOAD for saved games:"
+        puts "#{@current_player_name}'s move. Enter your move or type SAVE/LOAD for saved game:"
         loop do
             input = gets.chomp.strip.downcase
             save_game if input =~ /save/
@@ -52,9 +52,10 @@ class Game
                 puts "Invalid move. Enter move in coordinate format, e.g., e2-e4"
                 next
             end
-            if legal_move?(input)
+            move = alpha_to_rc(input)
+            if legal_move?(move)
                 valid_move = true
-                return alpha_to_rc(input)
+                return move
             else
                 puts "#{input} is not a legal move. Enter move:"
                 next
@@ -63,12 +64,10 @@ class Game
     end
 
     def legal_move?(move)
-        move = alpha_to_rc(move)
         from_sq = move[0]
         to_sq = move[1]
         piece = @board.squares[from_sq[0]][from_sq[1]]
         return false if piece.nil?
-        return false if from_sq == to_sq
         return false unless piece[0] == @current_player
         return false unless @board.can_go?(from_sq, to_sq)
         return false if @board.would_be_check?(move, @current_player)
@@ -82,17 +81,23 @@ class Game
     end
 
     def save_game
-        #save file
+        id = "1.txt"
+        Dir.mkdir("saved_games") unless Dir.exists? "saved_games"
+        filename = "saved_games/game_#{id}"
+        File.open(filename,'w') {|file| file.puts YAML::dump(self)}
         puts "Game saved."
         exit
     end
-
+    
     def load_game
-        #load file
-        #set board to saved state
-        self.play
+        @game_over = true
+        filename = "saved_games/game_1.txt"
+        new_game = YAML::load(File.read(filename))
+        new_game.play
     end
 end
+
+
 
 #game = Game.new
 #game.play

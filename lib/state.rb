@@ -57,6 +57,7 @@ class State
     end
 
     def can_go?(from_sq, to_sq)
+        return false if from_sq == to_sq
         row_diff, col_diff = rc_diff(from_sq, to_sq)
         piece = @squares[from_sq[0]][from_sq[1]]
         capture_piece = @squares[to_sq[0]][to_sq[1]]
@@ -167,7 +168,7 @@ class State
     end
 
     def would_be_check?(move, for_color)
-        hypothetical = State.new(YAML::load(YAML::dump(@squares)), @en_passant_square, @have_moved)
+        hypothetical = YAML::load(YAML::dump(self))
         hypothetical.make_move(move)
         hypothetical.check?(for_color)
     end
@@ -175,7 +176,7 @@ class State
     def mate?(for_color) 
         legals = get_all_legals(for_color)
         legals.each do |move|
-            hypothetical = State.new(YAML::load(YAML::dump(@squares)), @en_passant_square, @have_moved)
+            hypothetical = YAML::load(YAML::dump(self))
             hypothetical.make_move(move)
             return false if !hypothetical.check?(for_color)
         end

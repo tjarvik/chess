@@ -307,30 +307,30 @@ describe Game do
         it "allows a legal move" do
             game = check_board
             game.current_player = "B"
-            expect(game.legal_move?("h7-h5")).to be true
+            expect(game.legal_move?([[1,7],[3,7]])).to be true
         end
 
         it "does not allow an illegal move" do
             game = check_board
-            expect(game.legal_move?("a4-a5")).to be false
+            expect(game.legal_move?([[4,0],[3,0]])).to be false
         end
 
         it "does not allow moving into check" do
             game = check_board
             game.current_player = "B"
-            expect(game.legal_move?("a5-b5")).to be false
+            expect(game.legal_move?([[3,0],[3,1]])).to be false
         end
 
         it "does not allow discovering check on self" do
             game = check_board
             game.current_player = "B"
-            expect(game.legal_move?("c5-h5")).to be false
+            expect(game.legal_move?([[3,2],[2,2]])).to be false
         end
 
         it "allows en passant capture" do 
             game = check_board
             game.board.make_move([[1,7],[3,7]])
-            expect(game.legal_move?("g5-h6")).to be true
+            expect(game.legal_move?([[3,6],[2,7]])).to be true
         end
 
         it "does not allow en passant capture after 2 moves" do 
@@ -338,7 +338,7 @@ describe Game do
             game.board.make_move([[1,7],[3,7]])
             game.board.make_move([[3,2],[3,1]])
             game.board.make_move([[4,0],[3,1]])
-            expect(game.legal_move?("g5-h6")).to be false
+            expect(game.legal_move?([[3,6],[2,7]])).to be false
         end
 
         it "removes pawn captured en passant" do
