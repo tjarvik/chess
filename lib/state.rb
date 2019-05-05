@@ -9,9 +9,13 @@ class State
                               [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                               [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                               ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
-                              ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]])
+                              ["WR", "WN", "WB", "WQ", "WK", "WB", "WN", "WR"]],
+                    ep = nil, hm = {})
+
         #nothing = " # because text editor is messing up quote coloration above
         @squares = squares
+        @en_passant_square = ep
+        @have_moved = hm
     end
 
     def display
@@ -80,10 +84,7 @@ class State
                     path_clear?(from_sq, to_sq)
             elsif row_diff == direction && col_diff.abs == 1
                 return true if capture_piece 
-                if @en_passant == to_sq
-                    ##set ep queued to true?
-                    return true
-                end
+                return true if @en_passant_square == to_sq
             end
             false
         end
@@ -117,7 +118,8 @@ class State
         return false unless @squares[from_sq[0]][rook_col]
         return false unless @squares[from_sq[0]][rook_col][1] == "R"
         return false unless path_clear?(from_sq, rook_sq)
-        ###false if king or rook has moved
+        return false if @have_moved[from_sq]
+        return false if @have_moved[rook_sq]
         @castling = true
         true
     end
@@ -165,7 +167,7 @@ class State
     end
 
     def would_be_check?(move, for_color)
-        hypothetical = State.new(YAML::load(YAML::dump(@squares)))
+        hypothetical = State.new(YAML::load(YAML::dump(@squares)), @en_passant_square, @have_moved)
         hypothetical.make_move(move)
         hypothetical.check?(for_color)
     end
@@ -173,7 +175,7 @@ class State
     def mate?(for_color) 
         legals = get_all_legals(for_color)
         legals.each do |move|
-            hypothetical = State.new(YAML::load(YAML::dump(@squares)))
+            hypothetical = State.new(YAML::load(YAML::dump(@squares)), @en_passant_square, @have_moved)
             hypothetical.make_move(move)
             return false if !hypothetical.check?(for_color)
         end
@@ -185,17 +187,26 @@ class State
         to_sq = move[1]
         row_diff, col_diff = rc_diff(from_sq, to_sq)
         piece = @squares[from_sq[0]][from_sq[1]]
-        @squares[to_sq[0]][to_sq[1]] = piece
-        @squares[from_sq[0]][from_sq[1]] = nil
-        if piece[1] == "K" && col_diff.abs == 2 #move rook too when castling
+
+        if piece[1] == "K" && col_diff.abs == 2 #castling
             rook_col = col_diff == 2 ? 7 : 0
             direction = col_diff / col_diff.abs
             rook = @squares[from_sq[0]][rook_col]
             @squares[from_sq[0]][from_sq[1] + direction] = rook
             @squares[from_sq[0]][rook_col] = nil
         end
-        ###if a pawn moves two, set en passant to passed square
-        ###if en passant, remove captured pawn
-        ###if king or rook moves from original square, record it
+        @have_moved[from_sq] = true
+
+        if piece[1] == "P" && col_diff.abs == 1 && @squares[to_sq[0]][to_sq[1]].nil? #en passant
+            @squares[from_sq[0]][to_sq[1]] = nil
+        end
+        @en_passant_square = nil
+        if piece[1] == "P" && row_diff.abs == 2
+            direction = piece[0] == "W" ? -1 : 1
+            @en_passant_square = [from_sq[0] + direction, from_sq[1]]
+        end
+
+        @squares[to_sq[0]][to_sq[1]] = piece
+        @squares[from_sq[0]][from_sq[1]] = nil
     end
 end

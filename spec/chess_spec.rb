@@ -293,9 +293,9 @@ describe Game do
         game = Game.new
         game.board = State.new([
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
-                [ nil,  nil,  nil, "WK",  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil, "WK",  nil,  nil,  nil, "BP"],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
-                ["BK",  nil, "BR",  nil, "WR", "BP", "WP", "BP"],
+                ["BK",  nil, "BR",  nil, "WR", "BP", "WP",  nil],
                 ["WB",  nil,  nil,  nil,  nil,  nil, "BB",  nil],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
@@ -307,7 +307,7 @@ describe Game do
         it "allows a legal move" do
             game = check_board
             game.current_player = "B"
-            expect(game.legal_move?("h5-h4")).to be true
+            expect(game.legal_move?("h7-h5")).to be true
         end
 
         it "does not allow an illegal move" do
@@ -327,21 +327,25 @@ describe Game do
             expect(game.legal_move?("c5-h5")).to be false
         end
 
-        it "allows en passant capture" do #assuming just moved, not tested
+        it "allows en passant capture" do 
             game = check_board
+            game.board.make_move([[1,7],[3,7]])
             expect(game.legal_move?("g5-h6")).to be true
+        end
+
+        it "does not allow en passant capture after 2 moves" do 
+            game = check_board
+            game.board.make_move([[1,7],[3,7]])
+            game.board.make_move([[3,2],[3,1]])
+            game.board.make_move([[4,0],[3,1]])
+            expect(game.legal_move?("g5-h6")).to be false
         end
 
         it "removes pawn captured en passant" do
             game = check_board
+            game.board.make_move([[1,7],[3,7]])
             game.board.make_move([[3,6],[2,7]])
             expect(game.board.squares[3][7]).to be nil
         end
-
-        it "does not allow en passant capture to reveal check" do
-            game = check_board
-            expect(game.legal_move?("g5-f6")).to be false
-        end
-
     end
 end
