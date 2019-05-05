@@ -1,8 +1,10 @@
 require './lib/state.rb'
 class Game
-
+    attr_accessor :board
+    attr_accessor :current_player
+    
     def initialize
-        @checkmate = false
+        @game_over = false
         @board = State.new
         @current_player = "W"
         @current_player_name = "White"
@@ -10,7 +12,7 @@ class Game
 
     def play
         @board.display
-        take_turn until @checkmate
+        take_turn until @game_over
     end
 
     def take_turn
@@ -23,13 +25,16 @@ class Game
 
     def test_checkmate
         if @board.check?(@current_player)
-            if @board.checkmate?(@current_player)
+            if @board.mate?(@current_player)
                 puts "Checkmate!"
-                @checkmate = true
+                @game_over = true
             else
                 puts "Check!"
             end
-        end            
+        elsif @board.mate?(@current_player)
+            puts "Stalemate."
+            @game_over = true
+        end           
     end
 
     def toggle_player
@@ -64,8 +69,10 @@ class Game
         piece = @board.squares[from_sq[0]][from_sq[1]]
         return false if piece.nil?
         return false if from_sq == to_sq
-        return false if piece[0] != @current_player
-        @board.can_go?(from_sq, to_sq)
+        return false unless piece[0] == @current_player
+        return false unless @board.can_go?(from_sq, to_sq)
+        return false if @board.would_be_check?(move, @current_player)
+        true
     end
 
     def alpha_to_rc(raw_input)
@@ -87,8 +94,8 @@ class Game
     end
 end
 
-game = Game.new
-game.play
+#game = Game.new
+#game.play
 
 
 

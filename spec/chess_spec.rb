@@ -16,6 +16,19 @@ describe State do
         return board
     end
 
+    def castling_board
+        board = State.new(squares=[
+                ["BR",  nil,  nil,  nil, "BK",  nil,  nil, "BR"],
+                ["BP", "BP", "BP", "BP", "BP",  nil, "BP", "BP"],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil, "WQ",  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["WP", "WP", "WP", "WP", "WP", "WP", "WP", "WP"],
+                ["WR", "WN",  nil,  nil, "WK",  nil,  nil, "WR"]]) 
+        return board
+    end
+
     def sample_board
         board = State.new(squares=[
                 [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
@@ -26,6 +39,19 @@ describe State do
                 [ nil, "WP",  nil,  nil,  nil,  nil,  nil, "WR"],
                 [ nil,  nil, "WP",  nil,  nil,  nil,  nil,  nil],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil, "WB"]]) 
+        return board
+    end
+
+    def check_board
+        board = State.new(squares=[
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil, "WK",  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["BK",  nil, "BR",  nil, "WR", "BP", "WP", "BP"],
+                ["WB",  nil,  nil,  nil,  nil,  nil, "BB",  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil]]) 
         return board
     end
 
@@ -151,7 +177,32 @@ describe State do
             board = sample_board
             expect(board.can_go?([5,7], [5,1])).to be false
         end
-        
+
+        it "allows king side castling" do
+            board = castling_board
+            expect(board.can_go?([7,4], [7,6])).to be true
+        end
+
+        it "allows queen side castling" do
+            board = castling_board
+            expect(board.can_go?([0,4], [0,2])).to be true
+        end
+
+        it "moves rook when castling" do
+            board = castling_board
+            board.make_move([[0,4], [0,2]])
+            expect(board.squares[0][3]).to eql("BR")
+        end
+
+        it "does not allow castling through check" do
+            board = castling_board
+            expect(board.can_go?([0,4], [0,6])).to be false
+        end
+
+        it "does not allow castling through obstructing pieces" do
+            board = castling_board
+            expect(board.can_go?([7,4], [7,2])).to be false
+        end
     end
 
     def sample_board2
@@ -164,6 +215,19 @@ describe State do
                 [ nil, "WP",  nil,  nil,  nil,  nil,  nil, "WR"],
                 [ nil,  nil, "WP",  nil,  nil,  nil,  nil,  nil],
                 [ nil,  nil,  nil,  nil,  nil,  nil,  nil, "WB"]]) 
+        return board
+    end
+
+    def sample_board3
+        board = State.new(squares=[
+                [ nil,  nil,  nil, "BQ",  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil, "BK",  nil],
+                ["BB", "BR", "BP",  nil,  nil,  nil,  nil,  nil],
+                ["WK",  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["WP",  nil,  nil,  nil,  nil,  nil, "BR",  nil],
+                [ nil,  nil, "BP",  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil, "WP",  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil]]) 
         return board
     end
 
@@ -204,31 +268,79 @@ describe State do
     describe "#checkmate?" do
         it "identifies checkmate" do
             board = sample_board2
-            expect(board.checkmate?("W")).to be true
+            expect(board.mate?("W")).to be true
         end
 
         it "does not identify checkmate when capture would escape" do
             board = sample_board
-            expect(board.checkmate?("W")).to be false
+            expect(board.mate?("W")).to be false
         end
 
         it "does not identify checkmate when only in check" do
             board = sample_board
-            expect(board.checkmate?("B")).to be false
+            expect(board.mate?("B")).to be false
+        end
+
+        it "identifies stalemate" do
+            board = sample_board3
+            expect(board.mate?("W")).to be true
         end
     end
 end
 
 describe Game do
+    def check_board
+        game = Game.new
+        game.board = State.new([
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil, "WK",  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                ["BK",  nil, "BR",  nil, "WR", "BP", "WP", "BP"],
+                ["WB",  nil,  nil,  nil,  nil,  nil, "BB",  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil],
+                [ nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil]])
+        return game
+    end
+      
     describe "#legal_move?" do
         it "allows a legal move" do
-            game = Game.new
-            expect(game.legal_move?("e2-e4")).to be true
+            game = check_board
+            game.current_player = "B"
+            expect(game.legal_move?("h5-h4")).to be true
         end
 
         it "does not allow an illegal move" do
-            game = Game.new
-            expect(game.legal_move?("d1-d4")).to be false
+            game = check_board
+            expect(game.legal_move?("a4-a5")).to be false
+        end
+
+        it "does not allow moving into check" do
+            game = check_board
+            game.current_player = "B"
+            expect(game.legal_move?("a5-b5")).to be false
+        end
+
+        it "does not allow discovering check on self" do
+            game = check_board
+            game.current_player = "B"
+            expect(game.legal_move?("c5-h5")).to be false
+        end
+
+        it "allows en passant capture" do #assuming just moved, not tested
+            game = check_board
+            expect(game.legal_move?("g5-h6")).to be true
+        end
+
+        it "removes pawn captured en passant" do
+            game = check_board
+            game.board.make_move([[3,6],[2,7]])
+            expect(game.board.squares[3][7]).to be nil
+        end
+
+        it "does not allow en passant capture to reveal check" do
+            game = check_board
+            expect(game.legal_move?("g5-f6")).to be false
         end
 
     end

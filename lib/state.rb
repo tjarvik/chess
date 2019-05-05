@@ -58,16 +58,10 @@ class State
         capture_piece = @squares[to_sq[0]][to_sq[1]]
         if capture_piece
             return false if capture_piece[0] == piece[0]
-            if piece[1] == "P"
-                row_diff, col_diff = rc_diff(from_sq, to_sq)
-                direction = piece[0] == "W" ? -1 : 1
-                return row_diff == direction && col_diff.abs == 1
-            end
         end
         case piece[1]
         when "K"
-            row_diff.abs <= 1 && col_diff.abs <= 1
-            #or castling
+            row_diff.abs <= 1 && col_diff.abs <= 1 || castling?(from_sq, to_sq, piece)
         when "Q"
             (row_diff == 0 || col_diff == 0 || row_diff.abs == col_diff.abs) &&
                 path_clear?(from_sq, to_sq)
@@ -80,9 +74,18 @@ class State
         when "P"
             direction = piece[0] == "W" ? -1 : 1
             start_row = piece[0] == "W" ? 6 : 1
-            col_diff == 0 && (row_diff == direction || 
-                row_diff == direction * 2 && from_sq[0] == start_row && 
-                path_clear?(from_sq, to_sq))
+            if col_diff == 0 && @squares[to_sq[0]][to_sq[1]].nil?
+                return true if row_diff == direction
+                return true if row_diff == direction * 2 && from_sq[0] == start_row && 
+                    path_clear?(from_sq, to_sq)
+            elsif row_diff == direction && col_diff.abs == 1
+                return true if capture_piece 
+                if @en_passant == to_sq
+                    ##set ep queued to true?
+                    return true
+                end
+            end
+            false
         end
     end
 
@@ -97,6 +100,25 @@ class State
             this_col = from_sq[1] + n * col_direction
             return false if @squares[this_row][this_col]
         end
+        true
+    end
+
+    def castling?(from_sq, to_sq, piece)
+        row_diff, col_diff = rc_diff(from_sq, to_sq)
+        opponent = piece[0] == "W" ? "B" : "W"
+        return false unless col_diff.abs == 2 && row_diff == 0
+        return false if square_threatened?(from_sq, opponent)
+        return false if square_threatened?(to_sq, opponent)
+        direction = col_diff / col_diff.abs
+        interim_sq = [from_sq[0], from_sq[1] + direction]
+        return false if square_threatened?(interim_sq, opponent)
+        rook_col = direction == 1 ? 7 : 0
+        rook_sq = [from_sq[0], rook_col]
+        return false unless @squares[from_sq[0]][rook_col]
+        return false unless @squares[from_sq[0]][rook_col][1] == "R"
+        return false unless path_clear?(from_sq, rook_sq)
+        ###false if king or rook has moved
+        @castling = true
         true
     end
 
@@ -142,7 +164,13 @@ class State
         square_threatened?(k_square, opponent)
     end
 
-    def checkmate?(for_color) 
+    def would_be_check?(move, for_color)
+        hypothetical = State.new(YAML::load(YAML::dump(@squares)))
+        hypothetical.make_move(move)
+        hypothetical.check?(for_color)
+    end
+
+    def mate?(for_color) 
         legals = get_all_legals(for_color)
         legals.each do |move|
             hypothetical = State.new(YAML::load(YAML::dump(@squares)))
@@ -155,14 +183,19 @@ class State
     def make_move(move)
         from_sq = move[0]
         to_sq = move[1]
+        row_diff, col_diff = rc_diff(from_sq, to_sq)
         piece = @squares[from_sq[0]][from_sq[1]]
         @squares[to_sq[0]][to_sq[1]] = piece
         @squares[from_sq[0]][from_sq[1]] = nil
-        #if castling, move rook too
-        #if en passant, remove captured pawn
-    end
-
-    def castling_allowed?(for_color)
-
+        if piece[1] == "K" && col_diff.abs == 2 #move rook too when castling
+            rook_col = col_diff == 2 ? 7 : 0
+            direction = col_diff / col_diff.abs
+            rook = @squares[from_sq[0]][rook_col]
+            @squares[from_sq[0]][from_sq[1] + direction] = rook
+            @squares[from_sq[0]][rook_col] = nil
+        end
+        ###if a pawn moves two, set en passant to passed square
+        ###if en passant, remove captured pawn
+        ###if king or rook moves from original square, record it
     end
 end
