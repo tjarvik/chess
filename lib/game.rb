@@ -58,7 +58,11 @@ class Game
     def get_move
         if @computer && @current_player == "B"
             legals = @board.get_all_legals("B")
-            legals[rand(legals.length)]
+            not_check = []
+            legals.each do |move|
+                not_check << move unless @board.would_be_check?(move, @current_player)
+            end
+            not_check[rand(not_check.length)]
         else
             prompt_move
         end
